@@ -5,11 +5,13 @@
 
 #include "instructions.h"
 
-VMData* vm_create(const uint32_t memory) {
+VMData* vm_create(const uint32_t memory, const uint32_t maxPCIeDevices) {
 	VMData* vm = malloc(sizeof(VMData));
 	vm->memorySize = memory;
 	vm->memory = malloc(memory * sizeof(uint8_t));
 	vm->pc = 0;
+	vm->pcieData.maxDevices = maxPCIeDevices;
+	vm->pcieData.devices = malloc(maxPCIeDevices * sizeof(PCIeDevice*));
 	return vm;
 }
 
@@ -57,6 +59,43 @@ extern inline uint32_t calculate_branch_address(uint32_t imm16) {
 void vm_destroy(VMData *vm) {
 	free(vm->memory);
 	free(vm);
+}
+
+int32_t vm_add_pcie_device(const VMData *vm, const uint8_t bus, const uint8_t device, const uint8_t function, PCIeDevice *pcieDevice) {
+	if (device > 31 || function > 7) {
+		return -1;
+	}
+	int32_t freeSlot = -1;
+	for (int32_t i = 0; i < vm->pcieData.maxDevices; i++) {
+		const PCIeDevice* d = vm->pcieData.devices[i];
+		if (d) {
+			if (d->bus == bus && d->device == device && d->function == function) {
+				return 1;
+			}
+		}
+		else if (freeSlot == -1) {
+			freeSlot = i;
+		}
+	}
+	if (freeSlot == -1) {
+		return 2;
+	}
+	pcieDevice->bus = bus;
+	pcieDevice->device = device;
+	pcieDevice->function = function;
+	vm->pcieData.devices[freeSlot] = pcieDevice;
+	return 0;
+}
+
+void vm_remove_pcie_device(const VMData *vm, const uint8_t bus, const uint8_t device, const uint8_t function) {
+	for (int32_t i = 0; i < vm->pcieData.maxDevices; i++) {
+		const PCIeDevice* d = vm->pcieData.devices[i];
+		if (d && d->bus == bus && d->device == device && d->function == function) {
+			free(vm->pcieData.devices[i]);
+			vm->pcieData.devices[i] = nullptr;
+			break;
+		}
+	}
 }
 
 void vm_step(VMData *vm) {

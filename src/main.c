@@ -16,7 +16,7 @@ int main() {
 	uint8_t* memory = malloc(size);
 	fread(memory, size, 1, file);
 	fclose(file);
-	VMData* vm = vm_create(8192);
+	VMData* vm = vm_create(8192, 16);
 	for (uint32_t i = 0; i < size; i += 4) {
 		vm_write_address_b(vm, i + MEMORY_START + 3, memory[i]);
 		vm_write_address_b(vm, i + MEMORY_START + 2, memory[i + 1]);

@@ -4,8 +4,8 @@ project(MISC-I)
 
 set(CMAKE_C_STANDARD 23)
 
-add_library(MISC-I SHARED src/vm.c)
-add_executable(misc src/main.c src/vm.c)
+add_library(MISC-I SHARED src/vm.c src/pcie.c)
+add_executable(misc src/main.c src/vm.c src/pcie.c)
 
 include(GenerateExportHeader)
 generate_export_header(MISC-I BASE_NAME misc_i)
